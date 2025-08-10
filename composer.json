@@ -1,5 +1,5 @@
 {
-    "name": "prism/framework",
+    "name": "ufukcanatann/prism",
     "description": "PRISM Framework - Modern PHP Framework for Enterprise Applications",
     "type": "project",
     "keywords": [
@@ -106,7 +106,7 @@
     "repositories": [
         {
             "type": "vcs",
-            "url": "https://github.com/USERNAME/REPO"
+            "url": "https://github.com/ufukcanatann/prism"
         }
     ]
 }
