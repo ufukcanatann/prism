@@ -348,27 +348,20 @@ class SystemCommands extends Command
     {
         $this->info('Generating application key...');
 
-        $key = base64_encode(random_bytes(32));
-
-        if (file_exists('.env')) {
-            $env = file_get_contents('.env');
+        try {
+            // AppKeyGenerator sınıfını kullan
+            $result = \Core\Helpers\AppKeyGenerator::generateAndSave();
             
-            if (strpos($env, 'APP_KEY=') !== false) {
-                $env = preg_replace('/APP_KEY=.*/', "APP_KEY={$key}", $env);
-            } else {
-                $env .= "\nAPP_KEY={$key}";
-            }
-            
-            if (file_put_contents('.env', $env)) {
+            if ($result['success']) {
                 $this->line('✓ Application key generated and saved to .env file');
-                $this->comment("Key: {$key}");
+                $this->comment("Key: " . $result['key']);
                 return 0;
             } else {
-                $this->error('Failed to write to .env file');
+                $this->error('Failed to generate application key: ' . $result['message']);
                 return 1;
             }
-        } else {
-            $this->error('.env file not found. Please create it first.');
+        } catch (\Exception $e) {
+            $this->error('Error generating application key: ' . $e->getMessage());
             return 1;
         }
     }

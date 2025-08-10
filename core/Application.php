@@ -293,7 +293,7 @@ class Application implements HttpKernelInterface, TerminableInterface
      */
     public function version(): string
     {
-        return '2.0.0';
+        return Config::get('app.version', '3.0.0');
     }
 
     /**

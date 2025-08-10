@@ -31,7 +31,7 @@ class Console
     public function __construct(Application $app)
     {
         $this->app = $app;
-        $this->console = new SymfonyConsole('PRISM Framework', '3.0.0');
+        $this->console = new SymfonyConsole('PRISM Framework', $app->version());
         
         $this->registerDefaultCommands();
     }

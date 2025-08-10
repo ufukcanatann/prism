@@ -15,6 +15,17 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Framework Version
+    |--------------------------------------------------------------------------
+    |
+    | This value is the version of the PRISM Framework. This value is used
+    | throughout the application to display version information.
+    |
+    */
+    'version' => env('FRAMEWORK_VERSION', '3.0.0'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Environment
     |--------------------------------------------------------------------------
     |

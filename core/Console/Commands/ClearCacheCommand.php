@@ -61,10 +61,18 @@ class ClearCacheCommand extends Command
 
     private function clearViewCache(array &$cleared): void
     {
-        $viewCachePath = $this->app->storagePath('framework/views');
-        if (is_dir($viewCachePath)) {
-            $this->clearDirectory($viewCachePath);
-            $cleared[] = 'View';
+        // Clear both view cache directories
+        $viewCachePaths = [
+            $this->app->storagePath('framework/views'),
+            $this->app->storagePath('framework/cache/views'),
+            $this->app->storagePath('cache/views')
+        ];
+        
+        foreach ($viewCachePaths as $viewCachePath) {
+            if (is_dir($viewCachePath)) {
+                $this->clearDirectory($viewCachePath);
+                $cleared[] = 'View';
+            }
         }
     }
 

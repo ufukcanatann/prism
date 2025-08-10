@@ -68,6 +68,14 @@ class AppHelpers
     }
 
     /**
+     * Get framework version
+     */
+    public static function version(): string
+    {
+        return self::config('app.version', '3.0.0');
+    }
+
+    /**
      * Get asset URL
      */
     public static function asset(string $path): string
