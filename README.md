@@ -26,29 +26,50 @@ PRISM Framework is a powerful, secure, and developer-friendly PHP framework desi
 
 ##  Quick Start
 
-### 1. Create New Project
+### 🚀 Composer ile Kurulum (Önerilen)
+
+```bash
+# Yeni proje oluştur
+composer create-project ufukcanatann/prism my-project
+
+# Belirli versiyon ile kurulum
+composer create-project ufukcanatann/prism my-project "1.0.*"
+
+# Dist paketi tercih et
+composer create-project ufukcanatann/prism my-project --prefer-dist
+
+# Proje dizinine git
+cd my-project
+
+# Sunucuyu başlat
+php prism system:serve
+```
+
+### 📋 Manuel Kurulum
+
+#### 1. Proje İndir
 ```bash
 git clone <repository-url> my-app
 cd my-app
 ```
 
-### 2. Install Dependencies
+#### 2. Bağımlılıkları Yükle
 ```bash
 composer install
 ```
 
-### 3. Environment Setup
+#### 3. Environment Setup
 ```bash
-cp env.example .env
+cp .env.example .env
 ```
 
-### 4. Configure Environment
-Edit `.env` file with your settings:
+#### 4. Environment Konfigürasyonu
+`.env` dosyasını düzenle:
 ```env
 APP_NAME="My Application"
 APP_ENV=local
 APP_DEBUG=true
-APP_URL=http://localhost:8000
+APP_URL=http://127.0.0.1:8000
 
 DB_CONNECTION=mysql
 DB_HOST=localhost
@@ -58,17 +79,17 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-### 5. Install Framework
+#### 5. Framework Kurulumu
 ```bash
-php prism system install
+php prism system:install
 ```
 
-### 6. Start Development Server
+#### 6. Geliştirme Sunucusunu Başlat
 ```bash
-php prism system serve
+php prism system:serve
 ```
 
-Visit `http://localhost:8000` to see your application running! 🎉
+`http://127.0.0.1:8000` adresine giderek uygulamanızı görün! 🎉
 
 ##  Project Structure
 

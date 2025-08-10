@@ -1,6 +1,6 @@
 {
     "name": "ufukcanatann/prism",
-    "description": "PRISM Framework - Modern PHP Framework for Enterprise Applications",
+    "description": "PRISM - Modern PHP Framework for Enterprise Applications",
     "type": "project",
     "version": "1.0.0",
     "minimum-stability": "dev",
@@ -16,7 +16,7 @@
     "authors": [
         {
             "name": "PRISM Framework Team",
-            "email": "team@prism-framework.com"
+            "email": "info@prismteam.com"
         }
     ],
     "require": {
@@ -90,7 +90,7 @@
         "post-install-cmd": [
             "php core/install.php"
         ],
-        "post-update-cmd": [
+        "post-create-project-cmd": [
             "php core/install.php"
         ],
         "test": "phpunit",
