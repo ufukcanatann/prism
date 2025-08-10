@@ -27,6 +27,14 @@ class SystemCommands extends Command
     ];
 
     /**
+     * Get system commands
+     */
+    public function getSystemCommands(): array
+    {
+        return $this->systemCommands;
+    }
+
+    /**
      * Configure the command
      */
     protected function configure(): void
@@ -172,7 +180,7 @@ class SystemCommands extends Command
             // Create .env file
             $this->createEnvFile();
             
-            // Test database connection
+            // Test database connection and create database
             $this->testDatabaseConnection();
             
             // Create database tables
@@ -189,9 +197,10 @@ class SystemCommands extends Command
             $this->info('PRISM Framework installed successfully!');
             $this->line('');
             $this->comment('Next steps:');
-            $this->line('1. Configure your .env file');
+            $this->line('1. Database created and connected successfully');
             $this->line('2. Run: php prism system serve');
             $this->line('3. Visit: http://127.0.0.1:8000');
+            $this->line('4. Create models with: php prism make scaffold ModelName --fields "field1:type,field2:type" --views --routes');
             
             return 0;
             
@@ -310,8 +319,9 @@ class SystemCommands extends Command
         $cleared = 0;
 
         foreach ($cacheDirs as $dir) {
-            if (is_dir($dir)) {
-                if ($this->clearDirectory($dir)) {
+            $fullPath = $this->getProjectPath($dir);
+            if (is_dir($fullPath)) {
+                if ($this->clearDirectory($fullPath)) {
                     $this->line("✓ Cleared: {$dir}");
                     $cleared++;
                 } else {
@@ -818,6 +828,10 @@ class SystemCommands extends Command
         $username = \Core\Config::get('database.username');
         $password = \Core\Config::get('database.password');
         
+        $this->line("Host: {$host}:{$port}");
+        $this->line("Database: {$database}");
+        $this->line("Username: {$username}");
+        
         $dsn = "mysql:host={$host};port={$port};charset=utf8mb4";
         
         try {
@@ -829,8 +843,17 @@ class SystemCommands extends Command
             $this->line('✓ Database connection successful');
             
             // Create database if not exists
+            $this->line("Creating database '{$database}' if not exists...");
             $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             $this->line("✓ Database '{$database}' ready");
+            
+            // Test connection to the specific database
+            $pdo = new \PDO("mysql:host={$host};port={$port};dbname={$database};charset=utf8mb4", $username, $password, [
+                \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            ]);
+            
+            $this->line("✓ Successfully connected to database '{$database}'");
             
         } catch (\Exception $e) {
             throw new \Exception('Database connection failed: ' . $e->getMessage());
@@ -881,6 +904,10 @@ class SystemCommands extends Command
      */
     protected function clearDirectory(string $dir): bool
     {
+        if (!is_dir($dir)) {
+            return true;
+        }
+        
         $files = glob($dir . '/*');
         
         foreach ($files as $file) {
@@ -998,13 +1025,11 @@ class SystemCommands extends Command
      */
     protected function clearDirectoryContents(string $dir): bool
     {
-        $fullPath = $this->app->basePath($dir);
-        
-        if (!is_dir($fullPath)) {
+        if (!is_dir($dir)) {
             return true;
         }
         
-        $files = glob($fullPath . '/*');
+        $files = glob($dir . '/*');
         
         foreach ($files as $file) {
             if (is_file($file)) {

@@ -1,24 +1,29 @@
 <?php
 
-use Doctrine\DBAL\Schema\Schema;
-use Doctrine\Migrations\AbstractMigration;
+use Core\Database\Migration;
 
-/**
- * Create migrations table
- */
-final class CreateMigrationsTable extends AbstractMigration
+class CreateMigrationsTable extends Migration
 {
-    public function up(Schema $schema): void
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
     {
-        $table = $schema->createTable('migrations');
-        $table->addColumn('id', 'integer', ['autoincrement' => true]);
-        $table->addColumn('migration', 'string', ['length' => 255]);
-        $table->addColumn('batch', 'integer');
-        $table->setPrimaryKey(['id']);
+        $sql = "CREATE TABLE IF NOT EXISTS migrations (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            migration VARCHAR(255) NOT NULL,
+            batch INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )";
+        
+        \Core\Database::getInstance()->execute($sql);
     }
 
-    public function down(Schema $schema): void
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
     {
-        $schema->dropTable('migrations');
+        \Core\Database::getInstance()->execute("DROP TABLE IF EXISTS migrations");
     }
 }

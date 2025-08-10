@@ -41,12 +41,13 @@ class Console
      */
     protected function registerDefaultCommands(): void
     {
-        // Register essential commands only
+        // Register all available commands
         $this->registerCommand(new \Core\Console\Commands\MakeControllerCommand($this->app));
         $this->registerCommand(new \Core\Console\Commands\ServeCommand($this->app));
         $this->registerCommand(new \Core\Console\Commands\ClearCacheCommand($this->app));
-        
-        // Note: Add other commands as needed
+        $this->registerCommand(new \Core\Console\Commands\SystemCommands($this->app));
+        $this->registerCommand(new \Core\Console\Commands\GeneratorCommands($this->app));
+        $this->registerCommand(new \Core\Console\Commands\DatabaseCommands($this->app));
     }
 
     /**

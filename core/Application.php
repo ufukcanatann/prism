@@ -321,11 +321,16 @@ class Application implements HttpKernelInterface, TerminableInterface
     }
 
     /**
-     * Get the base path of the application
+     * Get the base path
      */
     public function basePath(string $path = ''): string
     {
-        // Public klasöründen çalışıyoruz, bu yüzden bir seviye yukarı çıkmamız gerekiyor
+        // CLI'den çalıştırıldığında mevcut çalışma dizinini kullan
+        if ($this->runningInConsole()) {
+            return getcwd() . '/' . ltrim($path, '/');
+        }
+        
+        // Web'den çalıştırıldığında public klasöründen bir seviye yukarı
         return __DIR__ . '/../' . ltrim($path, '/');
     }
 

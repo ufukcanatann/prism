@@ -45,6 +45,42 @@ abstract class Command extends SymfonyCommand
     }
 
     /**
+     * Set the command name
+     */
+    public function setName(string $name): static
+    {
+        parent::setName($name);
+        return $this;
+    }
+
+    /**
+     * Set the command description
+     */
+    public function setDescription(string $description): static
+    {
+        parent::setDescription($description);
+        return $this;
+    }
+
+    /**
+     * Add an argument to the command
+     */
+    public function addArgument(string $name, int|null $mode = null, string $description = '', mixed $default = null): static
+    {
+        parent::addArgument($name, $mode, $description, $default);
+        return $this;
+    }
+
+    /**
+     * Add an option to the command
+     */
+    public function addOption(string $name, array|string|null $shortcut = null, int|null $mode = null, string $description = '', mixed $default = null): static
+    {
+        parent::addOption($name, $shortcut, $mode, $description, $default);
+        return $this;
+    }
+
+    /**
      * Execute the command
      */
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -263,11 +299,21 @@ abstract class Command extends SymfonyCommand
     }
 
     /**
+     * Get project path for CLI commands
+     */
+    protected function getProjectPath(string $path = ''): string
+    {
+        // CLI'den çalıştırıldığında mevcut çalışma dizinini kullan
+        $projectPath = getcwd();
+        return $projectPath . '/' . ltrim($path, '/');
+    }
+
+    /**
      * Check if a file exists
      */
     protected function fileExists(string $path): bool
     {
-        return file_exists($this->app->basePath($path));
+        return file_exists($this->getProjectPath($path));
     }
 
     /**
@@ -275,7 +321,7 @@ abstract class Command extends SymfonyCommand
      */
     protected function ensureDirectoryExists(string $path): bool
     {
-        $fullPath = $this->app->basePath($path);
+        $fullPath = $this->getProjectPath($path);
         if (!is_dir($fullPath)) {
             return mkdir($fullPath, 0755, true);
         }
@@ -287,7 +333,7 @@ abstract class Command extends SymfonyCommand
      */
     protected function writeFile(string $path, string $content): bool
     {
-        $fullPath = $this->app->basePath($path);
+        $fullPath = $this->getProjectPath($path);
         $directory = dirname($fullPath);
         
         if (!is_dir($directory)) {
@@ -302,7 +348,7 @@ abstract class Command extends SymfonyCommand
      */
     protected function readFile(string $path): string
     {
-        $fullPath = $this->app->basePath($path);
+        $fullPath = $this->getProjectPath($path);
         if (!file_exists($fullPath)) {
             throw new \Exception("File not found: {$path}");
         }

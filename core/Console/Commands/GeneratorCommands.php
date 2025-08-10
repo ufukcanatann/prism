@@ -17,6 +17,7 @@ class GeneratorCommands extends Command
         'make:seeder' => 'makeSeeder',
         'make:middleware' => 'makeMiddleware',
         'make:request' => 'makeRequest',
+        'make:scaffold' => 'makeScaffold',
     ];
 
     /**
@@ -27,7 +28,7 @@ class GeneratorCommands extends Command
         $this
             ->setName('make')
             ->setDescription('Generate framework components')
-            ->addArgument('type', InputArgument::REQUIRED, 'Type of component to generate (controller, model, migration, factory, seeder, middleware, request)')
+            ->addArgument('type', InputArgument::REQUIRED, 'Type of component to generate (controller, model, migration, factory, seeder, middleware, request, scaffold)')
             ->addArgument('name', InputArgument::REQUIRED, 'Name of the component')
             ->addOption('resource', 'r', InputOption::VALUE_NONE, 'Generate a resource controller')
             ->addOption('api', null, InputOption::VALUE_NONE, 'Generate an API controller')
@@ -39,7 +40,14 @@ class GeneratorCommands extends Command
             ->addOption('create', null, InputOption::VALUE_OPTIONAL, 'The table to be created')
             ->addOption('table', null, InputOption::VALUE_OPTIONAL, 'The table to migrate')
             ->addOption('model', null, InputOption::VALUE_OPTIONAL, 'The name of the model')
-            ->addOption('path', null, InputOption::VALUE_OPTIONAL, 'The location where the migration file should be created');
+            ->addOption('path', null, InputOption::VALUE_OPTIONAL, 'The location where the migration file should be created')
+            ->addOption('fields', null, InputOption::VALUE_OPTIONAL, 'Database fields for the model (e.g., "name:string,email:string,age:integer")')
+            ->addOption('views', null, InputOption::VALUE_NONE, 'Generate views for the scaffold')
+            ->addOption('routes', null, InputOption::VALUE_NONE, 'Generate routes for the scaffold')
+            ->addOption('relations', null, InputOption::VALUE_OPTIONAL, 'Model relations (e.g., "hasMany:Product,belongsTo:User")')
+            ->addOption('fillable', null, InputOption::VALUE_OPTIONAL, 'Fillable fields (e.g., "name,email,password")')
+            ->addOption('hidden', null, InputOption::VALUE_OPTIONAL, 'Hidden fields (e.g., "password,remember_token")')
+            ->addOption('casts', null, InputOption::VALUE_OPTIONAL, 'Field casts (e.g., "price:decimal,active:boolean")');
     }
 
     /**
@@ -75,6 +83,7 @@ class GeneratorCommands extends Command
         $this->newLine();
         $this->comment('Usage: php prism make <type> <name>');
         $this->comment('Example: php prism make controller UserController');
+        $this->comment('Example: php prism make scaffold User --fields="name:string,email:string,age:integer" --views --routes');
     }
 
     /**
@@ -133,7 +142,7 @@ class GeneratorCommands extends Command
         $this->title("Creating Model: {$name}");
 
         // Create the model
-        if ($this->createModel($name)) {
+        if ($this->createModel($name, [], [], null, null, null)) {
             $this->success("Model [{$name}] created successfully.");
         } else {
             $this->error("Failed to create model [{$name}].");
@@ -359,17 +368,683 @@ class GeneratorCommands extends Command
         }
     }
 
+    /**
+     * Create a complete scaffold for a resource
+     */
+    protected function makeScaffold(InputInterface $input, OutputInterface $output): int
+    {
+        $name = $input->getArgument('name');
+        $fields = $input->getOption('fields');
+        $generateViews = $input->getOption('views');
+        $generateRoutes = $input->getOption('routes');
+        $isApi = $input->getOption('api');
+        $relations = $input->getOption('relations');
+        $fillable = $input->getOption('fillable');
+        $hidden = $input->getOption('hidden');
+        $casts = $input->getOption('casts');
+
+        // Parse fillable, hidden, and casts if provided
+        $parsedFillable = [];
+        if ($fillable) {
+            $parsedFillable = array_map('trim', explode(',', $fillable));
+        }
+
+        $parsedHidden = [];
+        if ($hidden) {
+            $parsedHidden = array_map('trim', explode(',', $hidden));
+        }
+
+        $parsedCasts = [];
+        if ($casts) {
+            $castPairs = explode(',', $casts);
+            foreach ($castPairs as $pair) {
+                $parts = explode(':', trim($pair));
+                if (count($parts) >= 2) {
+                    $parsedCasts[trim($parts[0])] = trim($parts[1]);
+                }
+            }
+        }
+
+        $this->title("Creating Scaffold for: {$name}");
+        
+        // Parse fields if provided
+        $parsedFields = [];
+        if ($fields) {
+            $parsedFields = $this->parseFields($fields);
+        }
+
+        // Parse relations if provided
+        $parsedRelations = [];
+        if ($relations) {
+            $parsedRelations = $this->parseRelations($relations);
+        }
+
+        $success = true;
+        $created = [];
+
+        // 1. Create Model
+        $this->section("Creating Model: {$name}");
+        if ($this->createModel($name, $parsedFields, $parsedRelations, $parsedFillable, $parsedHidden, $parsedCasts)) {
+            $created[] = "Model: {$name}";
+            $this->success("✓ Model created successfully");
+        } else {
+            $this->error("✗ Failed to create model");
+            $success = false;
+        }
+
+        // 2. Create Migration
+        $this->section("Creating Migration for: {$name}");
+        $tableName = $this->getTableName($name);
+        if ($this->createMigrationForScaffold($name, $tableName, $parsedFields)) {
+            $created[] = "Migration: create_{$tableName}_table";
+            $this->success("✓ Migration created successfully");
+        } else {
+            $this->error("✗ Failed to create migration");
+            $success = false;
+        }
+
+        // 3. Create Factory
+        $this->section("Creating Factory for: {$name}");
+        if ($this->createFactoryForModel($name)) {
+            $created[] = "Factory: {$name}Factory";
+            $this->success("✓ Factory created successfully");
+        } else {
+            $this->error("✗ Failed to create factory");
+            $success = false;
+        }
+
+        // 4. Create Seeder
+        $this->section("Creating Seeder for: {$name}");
+        if ($this->createSeederForModel($name)) {
+            $created[] = "Seeder: {$name}Seeder";
+            $this->success("✓ Seeder created successfully");
+        } else {
+            $this->error("✗ Failed to create seeder");
+            $success = false;
+        }
+
+        // 5. Create Controller
+        $this->section("Creating Controller for: {$name}");
+        if ($this->createControllerForModel($name, true, $isApi)) {
+            $created[] = "Controller: {$name}Controller";
+            $this->success("✓ Controller created successfully");
+        } else {
+            $this->error("✗ Failed to create controller");
+            $success = false;
+        }
+
+        // 6. Create Views (if requested)
+        if ($generateViews) {
+            $this->section("Creating Views for: {$name}");
+            if ($this->createViewsForScaffold($name, $parsedFields)) {
+                $created[] = "Views: index, create, edit, show";
+                $this->success("✓ Views created successfully");
+            } else {
+                $this->error("✗ Failed to create views");
+                $success = false;
+            }
+        }
+
+        // 7. Create Routes (if requested)
+        if ($generateRoutes) {
+            $this->section("Creating Routes for: {$name}");
+            if ($this->createRoutesForScaffold($name)) {
+                $created[] = "Routes: resource routes";
+                $this->success("✓ Routes created successfully");
+            } else {
+                $this->error("✗ Failed to create routes");
+                $success = false;
+            }
+        }
+
+        // Summary
+        $this->newLine();
+        $this->section("Scaffold Summary");
+        
+        if ($success) {
+            $this->success("🎉 Scaffold created successfully!");
+            $this->info("Created components:");
+            foreach ($created as $component) {
+                $this->line("  ✓ {$component}");
+            }
+            
+            $this->newLine();
+            $this->comment("Next steps:");
+            $this->line("  1. Run migration: php prism db migrate");
+            $this->line("  2. Seed database: php prism db seed");
+            $this->line("  3. Start server: php prism system:serve");
+            
+            return 0;
+        } else {
+            $this->error("❌ Scaffold creation failed!");
+            $this->comment("Some components were created, but there were errors.");
+            return 1;
+        }
+    }
+
+    /**
+     * Parse fields string into array
+     */
+    protected function parseFields(string $fields): array
+    {
+        $parsed = [];
+        $fieldList = explode(',', $fields);
+        
+        foreach ($fieldList as $field) {
+            $field = trim($field);
+            if (empty($field)) continue;
+            
+            $parts = explode(':', $field);
+            if (count($parts) >= 2) {
+                $fieldName = trim($parts[0]);
+                $fieldType = trim($parts[1]);
+                $parsed[$fieldName] = $fieldType;
+            }
+        }
+        
+        return $parsed;
+    }
+
+    /**
+     * Parse relations string into array
+     */
+    protected function parseRelations(string $relations): array
+    {
+        $parsed = [];
+        $relationList = explode(',', $relations);
+        
+        foreach ($relationList as $relation) {
+            $relation = trim($relation);
+            if (empty($relation)) continue;
+            
+            $parts = explode(':', $relation);
+            if (count($parts) >= 2) {
+                $relationType = trim($parts[0]);
+                $relationName = trim($parts[1]);
+                $parsed[$relationType] = $relationName;
+            }
+        }
+        
+        return $parsed;
+    }
+
+    /**
+     * Get table name from model name
+     */
+    protected function getTableName(string $modelName): string
+    {
+        // Convert PascalCase to snake_case and pluralize
+        $tableName = strtolower(preg_replace('/(?<!^)[A-Z]/', '_$0', $modelName));
+        return $tableName . 's'; // Simple pluralization
+    }
+
+    /**
+     * Create migration for scaffold
+     */
+    protected function createMigrationForScaffold(string $className, string $tableName, array $fields): bool
+    {
+        $migrationName = 'create_' . $tableName . '_table';
+        $migrationContent = $this->generateScaffoldMigrationContent($className, $tableName, $fields);
+        
+        $migrationDir = 'database/migrations';
+        $this->ensureDirectoryExists($migrationDir);
+        
+        $timestamp = date('Y_m_d_His');
+        $fileName = $timestamp . '_' . $migrationName . '.php';
+        $filePath = $migrationDir . '/' . $fileName;
+        
+        return $this->writeFile($filePath, $migrationContent);
+    }
+
+    /**
+     * Generate migration content for scaffold
+     */
+    protected function generateScaffoldMigrationContent(string $className, string $tableName, array $fields): string
+    {
+        $fieldsCode = '';
+        
+        if (!empty($fields)) {
+            foreach ($fields as $fieldName => $fieldType) {
+                $phpType = $this->getPhpType($fieldType);
+                $fieldsCode .= "            \$table->{$phpType}('{$fieldName}');\n";
+            }
+        } else {
+            // Default fields if none specified
+            $fieldsCode = "            \$table->string('name');\n";
+            $fieldsCode .= "            \$table->text('description')->nullable();\n";
+        }
+        
+        return "<?php
+
+use Core\Database\Migration;
+use Core\Database\Schema\Schema;
+use Core\Database\Schema\Blueprint;
+
+class {$className} extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('{$tableName}', function (Blueprint \$table) {
+            \$table->id();
+{$fieldsCode}            \$table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('{$tableName}');
+    }
+}";
+    }
+
+    /**
+     * Get PHP type from field type
+     */
+    protected function getPhpType(string $fieldType): string
+    {
+        $typeMap = [
+            'string' => 'string',
+            'text' => 'text',
+            'integer' => 'integer',
+            'int' => 'integer',
+            'bigint' => 'bigInteger',
+            'boolean' => 'boolean',
+            'bool' => 'boolean',
+            'decimal' => 'decimal',
+            'float' => 'float',
+            'double' => 'double',
+            'date' => 'date',
+            'datetime' => 'dateTime',
+            'timestamp' => 'timestamp',
+            'json' => 'json',
+        ];
+        
+        return $typeMap[$fieldType] ?? 'string';
+    }
+
+    /**
+     * Create views for scaffold
+     */
+    protected function createViewsForScaffold(string $name, array $fields): bool
+    {
+        $viewsDir = 'resources/views/' . strtolower($name) . 's';
+        $this->ensureDirectoryExists($viewsDir);
+        
+        $success = true;
+        
+        // Create index view
+        $indexContent = $this->generateIndexView($name, $fields);
+        if (!$this->writeFile($viewsDir . '/index.blade.php', $indexContent)) {
+            $success = false;
+        }
+        
+        // Create create view
+        $createContent = $this->generateCreateView($name, $fields);
+        if (!$this->writeFile($viewsDir . '/create.blade.php', $createContent)) {
+            $success = false;
+        }
+        
+        // Create edit view
+        $editContent = $this->generateEditView($name, $fields);
+        if (!$this->writeFile($viewsDir . '/edit.blade.php', $editContent)) {
+            $success = false;
+        }
+        
+        // Create show view
+        $showContent = $this->generateShowView($name, $fields);
+        if (!$this->writeFile($viewsDir . '/show.blade.php', $showContent)) {
+            $success = false;
+        }
+        
+        return $success;
+    }
+
+    /**
+     * Generate index view
+     */
+    protected function generateIndexView(string $name, array $fields): string
+    {
+        $tableHeaders = '';
+        $tableRows = '';
+        
+        if (!empty($fields)) {
+            foreach ($fields as $fieldName => $fieldType) {
+                $tableHeaders .= "                    <th>{$fieldName}</th>\n";
+                $tableRows .= "                        <td>{{ \${$name}->{$fieldName} }}</td>\n";
+            }
+        } else {
+            $tableHeaders = "                    <th>Name</th>\n                    <th>Description</th>\n";
+            $tableRows = "                        <td>{{ \${$name}->name }}</td>\n                        <td>{{ \${$name}->description }}</td>\n";
+        }
+        
+        return "@extends('layouts.app')
+
+@section('content')
+<div class=\"container\">
+    <div class=\"row justify-content-center\">
+        <div class=\"col-md-12\">
+            <div class=\"card\">
+                <div class=\"card-header d-flex justify-content-between align-items-center\">
+                    <h2>{$name}s</h2>
+                    <a href=\"{{ route('{$name}s.create') }}\" class=\"btn btn-primary\">Create New {$name}</a>
+                </div>
+                <div class=\"card-body\">
+                    @if(session('success'))
+                        <div class=\"alert alert-success\">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+                    
+                    <table class=\"table table-striped\">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+{$tableHeaders}                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(\${$name}s as \${$name})
+                            <tr>
+                                <td>{{ \${$name}->id }}</td>
+{$tableRows}                                <td>
+                                    <a href=\"{{ route('{$name}s.show', \${$name}) }}\" class=\"btn btn-sm btn-info\">View</a>
+                                    <a href=\"{{ route('{$name}s.edit', \${$name}) }}\" class=\"btn btn-sm btn-warning\">Edit</a>
+                                    <form action=\"{{ route('{$name}s.destroy', \${$name}) }}\" method=\"POST\" class=\"d-inline\">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type=\"submit\" class=\"btn btn-sm btn-danger\" onclick=\"return confirm('Are you sure?')\">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection";
+    }
+
+    /**
+     * Generate create view
+     */
+    protected function generateCreateView(string $name, array $fields): string
+    {
+        $formFields = '';
+        
+        if (!empty($fields)) {
+            foreach ($fields as $fieldName => $fieldType) {
+                $inputType = $this->getInputType($fieldType);
+                $formFields .= "                <div class=\"form-group\">
+                    <label for=\"{$fieldName}\">{$fieldName}</label>
+                    <input type=\"{$inputType}\" class=\"form-control @error('{$fieldName}') is-invalid @enderror\" id=\"{$fieldName}\" name=\"{$fieldName}\" value=\"{{ old('{$fieldName}') }}\">
+                    @error('{$fieldName}')
+                        <span class=\"invalid-feedback\">{{ \$message }}</span>
+                    @enderror
+                </div>\n";
+            }
+        } else {
+            $formFields = "                <div class=\"form-group\">
+                    <label for=\"name\">Name</label>
+                    <input type=\"text\" class=\"form-control @error('name') is-invalid @enderror\" id=\"name\" name=\"name\" value=\"{{ old('name') }}\">
+                    @error('name')
+                        <span class=\"invalid-feedback\">{{ \$message }}</span>
+                    @enderror
+                </div>
+                <div class=\"form-group\">
+                    <label for=\"description\">Description</label>
+                    <textarea class=\"form-control @error('description') is-invalid @enderror\" id=\"description\" name=\"description\">{{ old('description') }}</textarea>
+                    @error('description')
+                        <span class=\"invalid-feedback\">{{ \$message }}</span>
+                    @enderror
+                </div>";
+        }
+        
+        return "@extends('layouts.app')
+
+@section('content')
+<div class=\"container\">
+    <div class=\"row justify-content-center\">
+        <div class=\"col-md-8\">
+            <div class=\"card\">
+                <div class=\"card-header\">
+                    <h2>Create New {$name}</h2>
+                </div>
+                <div class=\"card-body\">
+                    <form action=\"{{ route('{$name}s.store') }}\" method=\"POST\">
+                        @csrf
+{$formFields}
+                        <div class=\"form-group mt-3\">
+                            <button type=\"submit\" class=\"btn btn-primary\">Create {$name}</button>
+                            <a href=\"{{ route('{$name}s.index') }}\" class=\"btn btn-secondary\">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection";
+    }
+
+    /**
+     * Generate edit view
+     */
+    protected function generateEditView(string $name, array $fields): string
+    {
+        $formFields = '';
+        
+        if (!empty($fields)) {
+            foreach ($fields as $fieldName => $fieldType) {
+                $inputType = $this->getInputType($fieldType);
+                $formFields .= "                <div class=\"form-group\">
+                    <label for=\"{$fieldName}\">{$fieldName}</label>
+                    <input type=\"{$inputType}\" class=\"form-control @error('{$fieldName}') is-invalid @enderror\" id=\"{$fieldName}\" name=\"{$fieldName}\" value=\"{{ old('{$fieldName}', \${$name}->{$fieldName}) }}\">
+                    @error('{$fieldName}')
+                        <span class=\"invalid-feedback\">{{ \$message }}</span>
+                    @enderror
+                </div>\n";
+            }
+        } else {
+            $formFields = "                <div class=\"form-group\">
+                    <label for=\"name\">Name</label>
+                    <input type=\"text\" class=\"form-control @error('name') is-invalid @enderror\" id=\"name\" name=\"name\" value=\"{{ old('name', \${$name}->name) }}\">
+                    @error('name')
+                        <span class=\"invalid-feedback\">{{ \$message }}</span>
+                    @enderror
+                </div>
+                <div class=\"form-group\">
+                    <label for=\"description\">Description</label>
+                    <textarea class=\"form-control @error('description') is-invalid @enderror\" id=\"description\" name=\"description\">{{ old('description', \${$name}->description) }}</textarea>
+                    @error('description')
+                        <span class=\"invalid-feedback\">{{ \$message }}</span>
+                    @enderror
+                </div>";
+        }
+        
+        return "@extends('layouts.app')
+
+@section('content')
+<div class=\"container\">
+    <div class=\"row justify-content-center\">
+        <div class=\"col-md-8\">
+            <div class=\"card\">
+                <div class=\"card-header\">
+                    <h2>Edit {$name}</h2>
+                </div>
+                <div class=\"card-body\">
+                    <form action=\"{{ route('{$name}s.update', \${$name}) }}\" method=\"POST\">
+                        @csrf
+                        @method('PUT')
+{$formFields}
+                        <div class=\"form-group mt-3\">
+                            <button type=\"submit\" class=\"btn btn-primary\">Update {$name}</button>
+                            <a href=\"{{ route('{$name}s.show', \${$name}) }}\" class=\"btn btn-secondary\">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection";
+    }
+
+    /**
+     * Generate show view
+     */
+    protected function generateShowView(string $name, array $fields): string
+    {
+        $showFields = '';
+        
+        if (!empty($fields)) {
+            foreach ($fields as $fieldName => $fieldType) {
+                $showFields .= "                <div class=\"row\">
+                    <div class=\"col-md-3\"><strong>{$fieldName}:</strong></div>
+                    <div class=\"col-md-9\">{{ \${$name}->{$fieldName} }}</div>
+                </div>\n";
+            }
+        } else {
+            $showFields = "                <div class=\"row\">
+                    <div class=\"col-md-3\"><strong>Name:</strong></div>
+                    <div class=\"col-md-9\">{{ \${$name}->name }}</div>
+                </div>
+                <div class=\"row\">
+                    <div class=\"col-md-3\"><strong>Description:</strong></div>
+                    <div class=\"col-md-9\">{{ \${$name}->description }}</div>
+                </div>";
+        }
+        
+        return "@extends('layouts.app')
+
+@section('content')
+<div class=\"container\">
+    <div class=\"row justify-content-center\">
+        <div class=\"col-md-8\">
+            <div class=\"card\">
+                <div class=\"card-header d-flex justify-content-between align-items-center\">
+                    <h2>{$name} Details</h2>
+                    <div>
+                        <a href=\"{{ route('{$name}s.edit', \${$name}) }}\" class=\"btn btn-warning\">Edit</a>
+                        <a href=\"{{ route('{$name}s.index') }}\" class=\"btn btn-secondary\">Back to List</a>
+                    </div>
+                </div>
+                <div class=\"card-body\">
+                    @if(session('success'))
+                        <div class=\"alert alert-success\">
+                            {{ session('success') }}
+                        </div>
+                    @endif
+                    
+{$showFields}
+                    <div class=\"row\">
+                        <div class=\"col-md-3\"><strong>Created:</strong></div>
+                        <div class=\"col-md-9\">{{ \${$name}->created_at }}</div>
+                    </div>
+                    <div class=\"row\">
+                        <div class=\"col-md-3\"><strong>Updated:</strong></div>
+                        <div class=\"col-md-9\">{{ \${$name}->updated_at }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@endsection";
+    }
+
+    /**
+     * Get input type from field type
+     */
+    protected function getInputType(string $fieldType): string
+    {
+        $typeMap = [
+            'string' => 'text',
+            'text' => 'textarea',
+            'integer' => 'number',
+            'int' => 'number',
+            'bigint' => 'number',
+            'boolean' => 'checkbox',
+            'bool' => 'checkbox',
+            'decimal' => 'number',
+            'float' => 'number',
+            'double' => 'number',
+            'date' => 'date',
+            'datetime' => 'datetime-local',
+            'timestamp' => 'datetime-local',
+            'json' => 'text',
+        ];
+        
+        return $typeMap[$fieldType] ?? 'text';
+    }
+
+    /**
+     * Create routes for scaffold
+     */
+    protected function createRoutesForScaffold(string $name): bool
+    {
+        $routesContent = "\n// {$name} routes\n";
+        $routesContent .= "\$router->get('/" . strtolower($name) . "s', [\\App\\Http\\Controllers\\{$name}Controller::class, 'index']);\n";
+        $routesContent .= "\$router->get('/" . strtolower($name) . "s/create', [\\App\\Http\\Controllers\\{$name}Controller::class, 'create']);\n";
+        $routesContent .= "\$router->post('/" . strtolower($name) . "s', [\\App\\Http\\Controllers\\{$name}Controller::class, 'store']);\n";
+        $routesContent .= "\$router->get('/" . strtolower($name) . "s/{id}', [\\App\\Http\\Controllers\\{$name}Controller::class, 'show']);\n";
+        $routesContent .= "\$router->get('/" . strtolower($name) . "s/{id}/edit', [\\App\\Http\\Controllers\\{$name}Controller::class, 'edit']);\n";
+        $routesContent .= "\$router->put('/" . strtolower($name) . "s/{id}', [\\App\\Http\\Controllers\\{$name}Controller::class, 'update']);\n";
+        $routesContent .= "\$router->delete('/" . strtolower($name) . "s/{id}', [\\App\\Http\\Controllers\\{$name}Controller::class, 'destroy']);\n";
+        
+        $webRoutesFile = 'routes/web.php';
+        
+        if (!$this->fileExists($webRoutesFile)) {
+            return false;
+        }
+        
+        $currentContent = $this->readFile($webRoutesFile);
+        
+        // Add routes before the closing PHP tag or at the end
+        if (strpos($currentContent, '// Scaffold routes') === false) {
+            // Add scaffold routes section
+            $insertPoint = strpos($currentContent, '// Add your routes here');
+            if ($insertPoint !== false) {
+                $newContent = substr($currentContent, 0, $insertPoint) . 
+                             "// Scaffold routes\n" . $routesContent . "\n" .
+                             substr($currentContent, $insertPoint);
+            } else {
+                // Add at the end before closing PHP tag
+                $newContent = rtrim($currentContent, "\n?>") . "\n\n" . $routesContent . "\n";
+            }
+        } else {
+            // Add to existing scaffold routes section
+            $insertPoint = strpos($currentContent, '// Scaffold routes');
+            $endPoint = strpos($currentContent, '// Add your routes here');
+            if ($endPoint === false) {
+                $endPoint = strlen($currentContent);
+            }
+            
+            $newContent = substr($currentContent, 0, $endPoint) . $routesContent . "\n" . substr($currentContent, $endPoint);
+        }
+        
+        return $this->writeFile($webRoutesFile, $newContent);
+    }
+
     // ============ Helper Methods ============
 
     /**
      * Create model file
      */
-    protected function createModel(string $name): bool
+    protected function createModel(string $name, array $fields, array $relations, ?array $fillable, ?array $hidden, ?array $casts): bool
     {
         $modelName = $this->studlyCase($name);
         $tableName = $this->snakeCase($this->plural($name));
         
-        $content = $this->generateModelContent($modelName, $tableName);
+        $content = $this->generateModelContent($modelName, $tableName, $fields, $relations, $fillable, $hidden, $casts);
         
         $this->ensureDirectoryExists('app/Models');
         $path = "app/Models/{$modelName}.php";
@@ -456,7 +1131,9 @@ class GeneratorCommands extends Command
             $content .= "        ]);\n\n";
             $content .= "        // Store the resource\n";
             $content .= "        // \$model = Model::create(\$validated);\n\n";
-            $content .= "        return \$this->redirect('/')->with('success', 'Resource created successfully');\n";
+            $content .= "        // Set flash message\n";
+            $content .= "        \\Core\\Session::flash('success', 'Resource created successfully');\n";
+            $content .= "        return \$this->redirect('/');\n";
         }
         
         $content .= "    }\n";
@@ -529,7 +1206,9 @@ class GeneratorCommands extends Command
             $content .= "            'name' => 'required|string|max:255',\n";
             $content .= "        ]);\n\n";
             $content .= "        // \$model = Model::create(\$validated);\n\n";
-            $content .= "        return \$this->redirect('/')->with('success', 'Resource created successfully');\n";
+            $content .= "        // Set flash message\n";
+            $content .= "        \\Core\\Session::flash('success', 'Resource created successfully');\n";
+            $content .= "        return \$this->redirect('/');\n";
         }
         
         $content .= "    }\n\n";
@@ -600,7 +1279,9 @@ class GeneratorCommands extends Command
             $content .= "        ]);\n\n";
             $content .= "        // \$model = Model::findOrFail(\$id);\n";
             $content .= "        // \$model->update(\$validated);\n\n";
-            $content .= "        return \$this->redirect('/')->with('success', 'Resource updated successfully');\n";
+            $content .= "        // Set flash message\n";
+            $content .= "        \\Core\\Session::flash('success', 'Resource updated successfully');\n";
+            $content .= "        return \$this->redirect('/');\n";
         }
         
         $content .= "    }\n\n";
@@ -620,7 +1301,9 @@ class GeneratorCommands extends Command
         } else {
             $content .= "        // \$model = Model::findOrFail(\$id);\n";
             $content .= "        // \$model->delete();\n\n";
-            $content .= "        return \$this->redirect('/')->with('success', 'Resource deleted successfully');\n";
+            $content .= "        // Set flash message\n";
+            $content .= "        \\Core\\Session::flash('success', 'Resource deleted successfully');\n";
+            $content .= "        return \$this->redirect('/');\n";
         }
         
         $content .= "    }\n";
@@ -631,8 +1314,37 @@ class GeneratorCommands extends Command
     /**
      * Generate model content
      */
-    protected function generateModelContent(string $modelName, string $tableName): string
+    protected function generateModelContent(string $modelName, string $tableName, array $fields, array $relations, ?array $fillable, ?array $hidden, ?array $casts): string
     {
+        $relationsCode = '';
+        if (!empty($relations)) {
+            foreach ($relations as $relationType => $relationName) {
+                $relationCode = $this->generateRelationCode($relationType, $relationName);
+                $relationsCode .= $relationCode;
+            }
+        }
+
+        $fillableCode = '';
+        if (!empty($fillable)) {
+            foreach ($fillable as $field) {
+                $fillableCode .= "                '{$field}',\n";
+            }
+        }
+
+        $hiddenCode = '';
+        if (!empty($hidden)) {
+            foreach ($hidden as $field) {
+                $hiddenCode .= "                '{$field}',\n";
+            }
+        }
+
+        $castsCode = '';
+        if (!empty($casts)) {
+            foreach ($casts as $field => $type) {
+                $castsCode .= "                '{$field}' => '{$type}',\n";
+            }
+        }
+
         return "<?php
 
 namespace App\\Models;
@@ -649,25 +1361,65 @@ class {$modelName} extends Model
     /**
      * The attributes that are mass assignable.
      */
-    protected array \$fillable = [
-        //
-    ];
+    protected array \$fillable = [\n{$fillableCode}    ];
 
     /**
      * The attributes that should be hidden for serialization.
      */
-    protected array \$hidden = [
-        //
-    ];
+    protected array \$hidden = [\n{$hiddenCode}    ];
 
     /**
      * The attributes that should be cast.
      */
-    protected array \$casts = [
-        //
-    ];
+    protected array \$casts = [\n{$castsCode}    ];
+
+    /**
+     * Define relationships.
+     */
+    protected function relations(): array
+    {
+        return [\n{$relationsCode}    ];
+    }
 }
 ";
+    }
+
+    /**
+     * Generate relation code for model
+     */
+    protected function generateRelationCode(string $relationType, string $relationName): string
+    {
+        $relationName = $this->studlyCase($relationName);
+        $relationModel = $this->studlyCase($relationName);
+
+        switch ($relationType) {
+            case 'hasMany':
+                return "                '{$relationName}' => [{$relationModel}::class, 'hasMany'],\n";
+            case 'belongsTo':
+                return "                '{$relationName}' => [{$relationModel}::class, 'belongsTo'],\n";
+            case 'hasOne':
+                return "                '{$relationName}' => [{$relationModel}::class, 'hasOne'],\n";
+            case 'belongsToMany':
+                return "                '{$relationName}' => [{$relationModel}::class, 'belongsToMany'],\n";
+            case 'morphMany':
+                return "                '{$relationName}' => [{$relationModel}::class, 'morphMany'],\n";
+            case 'morphOne':
+                return "                '{$relationName}' => [{$relationModel}::class, 'morphOne'],\n";
+            case 'morphToMany':
+                return "                '{$relationName}' => [{$relationModel}::class, 'morphToMany'],\n";
+            case 'morphTo':
+                return "                '{$relationName}' => [{$relationModel}::class, 'morphTo'],\n";
+            case 'morphedByMany':
+                return "                '{$relationName}' => [{$relationModel}::class, 'morphedByMany'],\n";
+            case 'hasManyThrough':
+                return "                '{$relationName}' => [{$relationModel}::class, 'hasManyThrough'],\n";
+            case 'hasOneThrough':
+                return "                '{$relationName}' => [{$relationModel}::class, 'hasOneThrough'],\n";
+            case 'belongsToThrough':
+                return "                '{$relationName}' => [{$relationModel}::class, 'belongsToThrough'],\n";
+            default:
+                return "                // {$relationType} relationship with {$relationModel}\n";
+        }
     }
 
     /**
@@ -947,27 +1699,60 @@ class {$className} extends FormRequest
     /**
      * Create factory for model
      */
-    protected function createFactoryForModel(string $name): void
+    protected function createFactoryForModel(string $name): bool
     {
-        $this->info("Creating factory for model: {$name}");
-        // Implementation would call the factory creation logic
+        $factoryName = $name . 'Factory';
+        $content = $this->generateFactoryContent($factoryName, $name);
+        
+        $this->ensureDirectoryExists('database/factories');
+        $path = "database/factories/{$factoryName}.php";
+        
+        if ($this->fileExists($path)) {
+            if (!$this->confirm("Factory [{$factoryName}] already exists. Overwrite?", false)) {
+                return false;
+            }
+        }
+        
+        return $this->writeFile($path, $content);
     }
 
     /**
      * Create seeder for model
      */
-    protected function createSeederForModel(string $name): void
+    protected function createSeederForModel(string $name): bool
     {
-        $this->info("Creating seeder for model: {$name}");
-        // Implementation would call the seeder creation logic
+        $seederName = $name . 'Seeder';
+        $content = $this->generateSeederContent($seederName);
+        
+        $this->ensureDirectoryExists('database/seeders');
+        $path = "database/seeders/{$seederName}.php";
+        
+        if ($this->fileExists($path)) {
+            if (!$this->confirm("Seeder [{$seederName}] already exists. Overwrite?", false)) {
+                return false;
+            }
+        }
+        
+        return $this->writeFile($path, $content);
     }
 
     /**
      * Create controller for model
      */
-    protected function createControllerForModel(string $name, bool $resource, bool $api): void
+    protected function createControllerForModel(string $name, bool $resource, bool $api): bool
     {
-        $this->info("Creating controller for model: {$name}");
-        // Implementation would call the controller creation logic
+        $controllerName = $name . 'Controller';
+        $content = $this->generateControllerContent($controllerName, $resource, $api);
+        
+        $this->ensureDirectoryExists('app/Http/Controllers');
+        $path = "app/Http/Controllers/{$controllerName}.php";
+        
+        if ($this->fileExists($path)) {
+            if (!$this->confirm("Controller [{$controllerName}] already exists. Overwrite?", false)) {
+                return false;
+            }
+        }
+        
+        return $this->writeFile($path, $content);
     }
 }

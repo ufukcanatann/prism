@@ -116,7 +116,8 @@ class DatabaseCommands extends Command
                 if ($pretend) {
                     $this->info("Would run: {$migration}");
                 } else {
-                    $this->runMigration($path, $migration);
+                    $migrationPath = $this->app->basePath("{$path}/{$migration}.php");
+                    $this->runMigration($migrationPath, $migration);
                     $this->recordMigration($migration);
                 }
                 $progressBar->advance();
@@ -257,33 +258,36 @@ class DatabaseCommands extends Command
     }
 
     /**
-     * Run a migration
+     * Run a single migration
      */
     protected function runMigration(string $path, string $migration): void
     {
-        $migrationPath = $this->app->basePath("{$path}/{$migration}.php");
+        $this->line("Running migration: {$migration}");
         
-        if (!file_exists($migrationPath)) {
-            throw new \Exception("Migration file not found: {$migration}");
-        }
-
         // Include and run the migration
-        require_once $migrationPath;
+        require_once $path;
         
         // Get migration class name from filename
         $className = $this->getMigrationClassName($migration);
         
         if (class_exists($className)) {
-            $migrationInstance = new $className;
-            
-            if (method_exists($migrationInstance, 'up')) {
-                $migrationInstance->up();
+            try {
+                // Create migration instance using PRISM's Migration class
+                $migrationInstance = new $className();
+                
+                if (method_exists($migrationInstance, 'up')) {
+                    $migrationInstance->up();
+                    $this->line("✓ Migrated: {$migration}");
+                } else {
+                    throw new \Exception("Migration method 'up' not found in {$className}");
+                }
+            } catch (\Exception $e) {
+                $this->error("Migration failed: {$migration} - " . $e->getMessage());
+                throw $e;
             }
         } else {
             throw new \Exception("Migration class not found: {$className}");
         }
-
-        $this->line("Migrated: {$migration}");
     }
     
     /**
@@ -297,6 +301,15 @@ class DatabaseCommands extends Command
         
         // Convert to PascalCase
         return $this->studlyCase($name);
+    }
+
+    /**
+     * Convert string to StudlyCase
+     */
+    protected function studlyCase(string $value): string
+    {
+        $value = ucwords(str_replace(['-', '_'], ' ', $value));
+        return str_replace(' ', '', $value);
     }
 
     /**

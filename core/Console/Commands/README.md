@@ -1,629 +1,161 @@
-# PRISM Framework Console Commands Kullanım Kılavuzu
+# PRISM Framework Console Commands
 
-Bu kılavuz, PRISM Framework'ün console komutlarının nasıl kullanılacağını detaylı bir şekilde açıklar.
+Bu dosya PRISM Framework'ün mevcut console komutlarını ve kullanımlarını açıklar.
 
-## 📁 Klasör Yapısı
+## Mevcut Komutlar
 
-```
-core/Console/Commands/
-├── Command.php              # Ana command sınıfı (tüm komutların base'i)
-├── GeneratorCommands.php    # Kod üretici komutları (make:*)
-├── DatabaseCommands.php     # Veritabanı işlem komutları 
-├── SystemCommands.php       # Sistem yönetim komutları
-└── README.md               # Bu kılavuz
-```
+### Sistem Komutları (`SystemCommands`)
 
-## 🎯 Komut Kategorileri
-
-### 1. Generator Commands (Kod Üreticiler)
-Uygulama bileşenlerini otomatik oluşturur.
-
-### 2. Database Commands (Veritabanı)
-Veritabanı migration ve seeding işlemleri.
-
-### 3. System Commands (Sistem Yönetimi)
-Uygulama yönetimi, güvenlik ve geliştirme araçları.
-
----
-
-## 🔨 Generator Commands
-
-**Dosya:** `GeneratorCommands.php`  
-**Amaç:** Model, Controller, Migration gibi kod dosyalarını otomatik oluşturur.
-
-### Kullanım Şablonu
+#### `system:serve`
+Uygulamayı geliştirme sunucusunda başlatır.
 ```bash
-php prism make <type> <name> [options]
+php prism system:serve
 ```
 
-### 📋 Kullanılabilir Generatorlar
-
-#### 1. Controller Oluşturma
+#### `system:clear:cache`
+Uygulama cache'ini temizler.
 ```bash
-# Basit controller
-php prism make controller UserController
-
-# Resource controller (CRUD methodları ile)
-php prism make controller UserController --resource
-
-# API controller (JSON response'lar ile)
-php prism make controller UserController --api
-
-# Resource + API controller
-php prism make controller UserController --resource --api
+php prism system:clear:cache
 ```
 
-**Oluşturulan dosya:** `app/Http/Controllers/UserController.php`
-
-#### 2. Model Oluşturma
+#### `system:install`
+Framework'ü kurar ve veritabanı bağlantısını test eder.
 ```bash
-# Basit model
-php prism make model User
-
-# Model + Migration
-php prism make model User --migration
-
-# Model + Factory
-php prism make model User --factory
-
-# Model + Seeder
-php prism make model User --seeder
-
-# Model + Controller
-php prism make model User --controller
-
-# Hepsini birden oluştur
-php prism make model User --all
-
-# Özel kombinasyonlar
-php prism make model User --migration --factory --controller --resource
+php prism system:install
 ```
 
-**Oluşturulan dosya:** `app/Models/User.php`
+### Generator Komutları (`GeneratorCommands`)
 
-#### 3. Migration Oluşturma
+#### `make:controller`
+Yeni bir controller oluşturur.
 ```bash
-# Basit migration
-php prism make migration create_users_table
-
-# Tablo oluşturma migration'ı
-php prism make migration create_users_table --create=users
-
-# Tablo değiştirme migration'ı
-php prism make migration add_email_to_users_table --table=users
-
-# Özel path
-php prism make migration create_posts_table --path=database/custom_migrations
+php prism make:controller UserController
 ```
 
-**Oluşturulan dosya:** `database/migrations/{timestamp}_create_users_table.php`
-
-#### 4. Factory Oluşturma
+#### `make:model`
+Yeni bir model oluşturur.
 ```bash
-# Basit factory
-php prism make factory UserFactory
-
-# Model belirterek factory
-php prism make factory UserFactory --model=User
+php prism make:model User
 ```
 
-**Oluşturulan dosya:** `database/factories/UserFactory.php`
-
-#### 5. Seeder Oluşturma
+#### `make:migration`
+Yeni bir migration oluşturur.
 ```bash
-# Basit seeder
-php prism make seeder UserSeeder
-
-# Model ile ilişkili seeder
-php prism make seeder UserSeeder --model=User
+php prism make:migration create_users_table
 ```
 
-**Oluşturulan dosya:** `database/seeders/UserSeeder.php`
-
-#### 6. Middleware Oluşturma
+#### `make:seeder`
+Yeni bir seeder oluşturur.
 ```bash
-# Middleware oluştur
-php prism make middleware AuthMiddleware
-php prism make middleware AdminMiddleware
+php prism make:seeder UserSeeder
 ```
 
-**Oluşturulan dosya:** `core/Middleware/AuthMiddleware.php`
-
-#### 7. Form Request Oluşturma
+#### `make:factory`
+Yeni bir factory oluşturur.
 ```bash
-# Form request oluştur
-php prism make request StoreUserRequest
-php prism make request UpdatePostRequest
+php prism make:factory UserFactory
 ```
 
-**Oluşturulan dosya:** `app/Http/Requests/StoreUserRequest.php`
+#### `make:scaffold`
+**YENİ!** Tek komutla tam bir MVC yapısı oluşturur (Model, Controller, Migration, Seeder, Factory, Views, Routes).
 
-### 💡 Generator Örnekleri
-
-#### Tam Blog Sistemi Oluşturma
 ```bash
-# Post model'i ve tüm bileşenlerini oluştur
-php prism make model Post --all
-
-# Comment model'i oluştur
-php prism make model Comment --migration --factory
-
-# Admin middleware oluştur
-php prism make middleware AdminMiddleware
-
-# Post validation request'i oluştur
-php prism make request StorePostRequest
+php prism make:scaffold ModelName [options]
 ```
 
-#### E-ticaret Kategori Sistemi
+**Seçenekler:**
+- `--views`: View dosyalarını oluşturur
+- `--routes`: Route'ları oluşturur
+- `--fields`: Model alanlarını tanımlar (örn: "name:string,email:string,age:integer")
+- `--api`: API controller oluşturur
+- `--resource`: Resource controller oluşturur
+- `--relations`: Model ilişkilerini tanımlar (örn: "hasMany:Product,belongsTo:User")
+- `--fillable`: Mass assignment için alanları tanımlar (örn: "name,email,age")
+- `--hidden`: Serialization'da gizlenecek alanları tanımlar (örn: "password,secret")
+- `--casts`: Veri tipi dönüşümlerini tanımlar (örn: "age:integer,active:boolean")
+
+**Oluşturulan Dosyalar:**
+- Model (`app/Models/ModelName.php`)
+- Controller (`app/Http/Controllers/ModelNameController.php`)
+- Migration (`database/migrations/YYYY_MM_DD_HHMMSS_create_modelnames_table.php`)
+- Seeder (`database/seeders/ModelNameSeeder.php`)
+- Factory (`database/factories/ModelNameFactory.php`)
+- Views (`resources/views/modelnames/` klasörü)
+- Routes (`routes/web.php` içine eklenir)
+
+**Özellikler:**
+- Otomatik model özellikleri (`$fillable`, `$hidden`, `$casts`)
+- Otomatik model ilişkileri (`relations()` metodu)
+- Tam CRUD işlemleri
+- Flash mesajları
+- Validation desteği
+- Responsive Bootstrap UI
+
+**Desteklenen Alan Tipleri:**
+- `string`, `text`, `integer`, `bigint`, `decimal`, `float`, `boolean`, `date`, `datetime`, `timestamp`, `json`
+
+**Desteklenen İlişki Tipleri:**
+- `hasOne`, `hasMany`, `belongsTo`, `belongsToMany`, `hasOneThrough`, `hasManyThrough`, `morphOne`, `morphMany`, `morphTo`, `morphToMany`, `morphedByMany`
+
+**Örnek Kullanımlar:**
+
+Basit scaffold:
 ```bash
-# Category controller (API)
-php prism make controller CategoryController --resource --api
-
-# Product model ve migration
-php prism make model Product --migration --factory --seeder
-
-# Ürün filtreleme middleware
-php prism make middleware ProductFilterMiddleware
+php prism make:scaffold Product --views --routes
 ```
 
----
-
-## 💾 Database Commands
-
-**Dosya:** `DatabaseCommands.php`  
-**Amaç:** Veritabanı migration ve seeding işlemleri.
-
-### Kullanım Şablonu
+Alanlarla scaffold:
 ```bash
-php prism db <action> [options]
+php prism make:scaffold User --fields="name:string,email:string,password:string,age:integer" --views --routes
 ```
 
-### 📋 Kullanılabilir Komutlar
-
-#### 1. Migration Çalıştırma
+Tam özellikli scaffold (tüm seçenekler):
 ```bash
-# Tüm pending migration'ları çalıştır
-php prism db migrate
-
-# Migration'ları preview et (çalıştırmadan göster)
-php prism db migrate --pretend
-
-# Production'da zorla çalıştır
-php prism db migrate --force
-
-# Migration sonrası seeder'ları da çalıştır
-php prism db migrate --seed
-
-# Belirli path'ten migration'ları çalıştır
-php prism db migrate --path=database/custom_migrations
-
-# Step by step migration
-php prism db migrate --step=1
+php prism make:scaffold Product \
+  --fields="name:string,description:text,price:decimal,stock:integer,user_id:bigint,category_id:bigint" \
+  --relations="belongsTo:User,belongsTo:Category" \
+  --fillable="name,description,price,stock,user_id,category_id" \
+  --hidden="secret_key" \
+  --casts="price:decimal,stock:integer,active:boolean" \
+  --views \
+  --routes
 ```
 
-#### 2. Database Seeding
+**Post-Scaffold Adımları:**
+1. Migration'ları çalıştır: `php prism db:migrate`
+2. Seeder'ları çalıştır: `php prism db:seed`
+3. Uygulamayı başlat: `php prism system:serve`
+
+### Veritabanı Komutları (`DatabaseCommands`)
+
+#### `db:migrate`
+Migration'ları çalıştırır.
 ```bash
-# Varsayılan seeder'ı çalıştır (DatabaseSeeder)
-php prism db seed
-
-# Belirli seeder'ı çalıştır
-php prism db seed UserSeeder
-
-# Production'da zorla çalıştır
-php prism db seed --force
-
-# Belirli seeder class'ı
-php prism db seed --class=ProductSeeder
+php prism db:migrate
 ```
 
-### 💡 Database İşlem Örnekleri
-
-#### İlk Kurulum
+#### `db:seed`
+Seeder'ları çalıştırır.
 ```bash
-# Migration'ları çalıştır ve sample data ekle
-php prism db migrate --seed
+php prism db:seed
 ```
 
-#### Geliştirme Sırasında
+## Komut Geliştirme
+
+Yeni komut eklemek için:
+
+1. `core/Console/Commands/` klasöründe yeni komut dosyası oluştur
+2. `Command` sınıfından türet
+3. `core/Console/Console.php` dosyasında komutu kaydet
+
+## Yardım
+
+Komut listesini görmek için:
 ```bash
-# Yeni migration'ları kontrol et
-php prism db migrate --pretend
-
-# Migration'ları çalıştır
-php prism db migrate
-
-# Test verilerini yenile
-php prism db seed TestDataSeeder
+php prism list
 ```
 
-#### Production Deployment
+Belirli bir komut hakkında yardım almak için:
 ```bash
-# Production'da migration (dikkatli!)
-php prism db migrate --force
-
-# Production seed (sadece gerekli veriler)
-php prism db seed ProductionSeeder --force
+php prism help [komut_adı]
 ```
-
----
-
-## ⚙️ System Commands
-
-**Dosya:** `SystemCommands.php`  
-**Amaç:** Uygulama yönetimi, güvenlik, optimizasyon ve geliştirme araçları.
-
-### Kullanım Şablonu
-```bash
-php prism system <action> [options]
-```
-
-### 📋 Server Management
-
-#### 1. Geliştirme Sunucusu
-```bash
-# Varsayılan ayarlarla başlat (127.0.0.1:8000)
-php prism system serve
-
-# Özel port
-php prism system serve --port=8080
-
-# Özel host
-php prism system serve --host=0.0.0.0 --port=3000
-
-# Özel public directory
-php prism system serve --public=dist
-```
-
-#### 2. Framework Kurulumu
-```bash
-# İlk kurulum
-php prism system install
-
-# Zorla yeniden kurulum
-php prism system install --force
-
-# Kurulum + sample data
-php prism system install --seed
-```
-
-#### 3. Maintenance Mode
-```bash
-# Maintenance mode'a al
-php prism system down
-
-# Özel mesaj ile
-php prism system down --message="Sistem güncellemesi yapılıyor"
-
-# Retry süresi belirle
-php prism system down --retry=120
-
-# Belirli IP'lere izin ver
-php prism system down --allow=192.168.1.1,192.168.1.2
-
-# Secret bypass key
-php prism system down --secret=emergency123
-
-# Maintenance mode'dan çıkar
-php prism system up
-```
-
-### 📋 Utilities
-
-#### 1. Cache Yönetimi
-```bash
-# Tüm cache'i temizle
-php prism system clear:cache
-```
-
-#### 2. Uygulama Optimizasyonu
-```bash
-# Tüm optimizasyonları çalıştır
-php prism system optimize
-```
-
-#### 3. Uygulama Anahtarı
-```bash
-# Yeni application key oluştur
-php prism system key:generate
-```
-
-### 📋 Information Commands
-
-#### 1. Route Listesi
-```bash
-# Tüm route'ları listele
-php prism system route:list
-
-# HTTP method'a göre filtrele
-php prism system route:list --method=POST
-
-# Route isminde arama
-php prism system route:list UserController
-
-# Path'te arama
-php prism system route:list --path=/api/
-```
-
-#### 2. Uygulama İnceleme
-```bash
-# Hangi bileşenler incelenebilir
-php prism system inspect
-
-# Route'ları incele
-php prism system inspect routes
-
-# Konfigürasyonu incele
-php prism system inspect config
-
-# Veritabanını incele
-php prism system inspect database
-
-# Cache durumunu incele
-php prism system inspect cache
-
-# Container binding'lerini incele
-php prism system inspect container
-
-# Environment variable'ları incele
-php prism system inspect env
-
-# JSON formatında export
-php prism system inspect routes --format=json --export=routes.json
-
-# Filtreleme
-php prism system inspect config --filter=database
-```
-
-#### 3. Tüm Komutları Listele
-```bash
-# Mevcut tüm komutları göster
-php prism system list
-```
-
-### 📋 Environment Management
-
-#### 1. Environment Variable İşlemleri
-```bash
-# ENV menüsünü göster
-php prism system env
-
-# Variable okuma
-php prism system env get APP_NAME
-php prism system env get DB_HOST
-
-# Variable ayarlama
-php prism system env set APP_DEBUG true
-php prism system env set DB_PASSWORD secret123
-
-# Variable silme
-php prism system env unset OLD_SETTING
-
-# Tüm variable'ları listele
-php prism system env list
-
-# ENV dosyasını validate et
-php prism system env validate
-
-# ENV dosyasını backup'la
-php prism system env backup
-php prism system env backup --backup=.env.backup.$(date +%Y%m%d)
-
-# Backup'tan restore et
-php prism system env restore .env.backup.20241201
-
-# env.example'dan yeni .env oluştur
-php prism system env generate
-
-# Özel dosya ile çalış
-php prism system env list --file=.env.production
-```
-
-### 📋 Security Commands
-
-#### 1. Güvenlik Taraması
-```bash
-# Basit güvenlik taraması
-php prism system security:scan
-
-# Detaylı tarama
-php prism system security:scan --level=full
-
-# Bulunan sorunları otomatik düzelt
-php prism system security:scan --fix
-
-# Rapor oluştur
-php prism system security:scan --report=security_report.json
-
-# Düzeltme + rapor
-php prism system security:scan --fix --report=security_fix_report.json
-```
-
-#### 2. Güvenlik Kurulumu
-```bash
-# Güvenlik özellikleri menüsü
-php prism system security:setup
-
-# CSRF koruması kur
-php prism system security:setup --csrf
-
-# Güvenlik header'ları kur
-php prism system security:setup --headers
-
-# Rate limiting kur
-php prism system security:setup --rate-limit
-
-# Tüm güvenlik özelliklerini kur
-php prism system security:setup --all
-```
-
----
-
-## 🔄 Workflow Örnekleri
-
-### Yeni Proje Başlatma
-```bash
-# 1. Framework'ü kur
-php prism system install --seed
-
-# 2. İlk model ve controller'ı oluştur
-php prism make model User --all
-
-# 3. Güvenlik özelliklerini kur
-php prism system security:setup --all
-
-# 4. Geliştirme sunucusunu başlat
-php prism system serve
-```
-
-### Yeni Feature Geliştirme
-```bash
-# 1. Model ve migration oluştur
-php prism make model Post --migration --factory --seeder
-
-# 2. Controller oluştur
-php prism make controller PostController --resource
-
-# 3. Form request oluştur
-php prism make request StorePostRequest
-php prism make request UpdatePostRequest
-
-# 4. Migration'ı çalıştır
-php prism db migrate
-
-# 5. Test verilerini ekle
-php prism db seed PostSeeder
-```
-
-### Production Deployment
-```bash
-# 1. Güvenlik taraması yap
-php prism system security:scan --level=full --report=pre_deploy_scan.json
-
-# 2. Optimizasyon yap
-php prism system optimize
-
-# 3. Migration'ları çalıştır
-php prism db migrate --force
-
-# 4. Production seeder'ları çalıştır
-php prism db seed ProductionSeeder --force
-
-# 5. Cache'i temizle
-php prism system clear:cache
-```
-
-### Debugging ve Geliştirme
-```bash
-# 1. Route'ları kontrol et
-php prism system route:list --path=/api/
-
-# 2. Konfigürasyonu incele
-php prism system inspect config --filter=database
-
-# 3. Veritabanı durumunu kontrol et
-php prism system inspect database
-
-# 4. Environment'ı validate et
-php prism system env validate
-
-# 5. Cache durumunu kontrol et
-php prism system inspect cache
-```
-
----
-
-## ⚡ Hızlı Referans
-
-### En Çok Kullanılan Komutlar
-```bash
-# Geliştirme
-php prism system serve                    # Sunucu başlat
-php prism make controller UserController  # Controller oluştur
-php prism make model User --migration     # Model + Migration
-php prism db migrate                      # Migration çalıştır
-php prism system clear:cache             # Cache temizle
-
-# İnceleme
-php prism system route:list              # Route'ları listele
-php prism system inspect database        # DB durumu
-php prism system env list                # ENV variable'ları
-
-# Güvenlik
-php prism system security:scan           # Güvenlik taraması
-php prism system security:setup --all    # Güvenlik kurulumu
-
-# Bakım
-php prism system down                     # Maintenance mode
-php prism system up                       # Maintenance'tan çık
-php prism system optimize                 # Optimize et
-```
-
-### Dosya Konumları
-```
-Generators tarafından oluşturulan dosyalar:
-├── app/Http/Controllers/     # Controllers
-├── app/Http/Requests/        # Form Requests  
-├── app/Models/              # Models
-├── core/Middleware/         # Middleware
-├── database/migrations/     # Migrations
-├── database/factories/      # Factories
-└── database/seeders/        # Seeders
-```
-
----
-
-## 🐛 Sorun Giderme
-
-### Yaygın Hatalar ve Çözümleri
-
-#### 1. "Command not found" Hatası
-```bash
-# Çözüm: Tam path kullan
-php core/Console/Console.php system serve
-```
-
-#### 2. "Permission denied" Hatası
-```bash
-# Çözüm: Dosya izinlerini kontrol et
-chmod +x prism
-php prism system security:scan --fix
-```
-
-#### 3. "Database connection failed"
-```bash
-# Çözüm: ENV ayarlarını kontrol et
-php prism system env validate
-php prism system inspect database
-```
-
-#### 4. "Migration already exists"
-```bash
-# Çözüm: Farklı isim kullan
-php prism make migration add_email_to_users_table_v2
-```
-
-### Debug Modunu Etkinleştir
-```bash
-# ENV'de debug'ı aç
-php prism system env set APP_DEBUG true
-
-# Log'ları kontrol et
-tail -f storage/logs/app-$(date +%Y-%m-%d).log
-```
-
----
-
-## 📞 Destek
-
-Bu komutlarla ilgili sorun yaşıyorsan:
-
-1. **Documentation:** Bu README dosyasını tekrar oku
-2. **Help:** `php prism help <command>` komutunu kullan
-3. **Logs:** `storage/logs/` klasöründeki log dosyalarını kontrol et
-4. **Debug:** `APP_DEBUG=true` ayarlayıp detaylı hata mesajlarını incele
-
----
-
-**Son güncelleme:** 2024-12-07  
-**PRISM Framework Sürümü:** 2.0.0

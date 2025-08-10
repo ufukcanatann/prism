@@ -37,7 +37,7 @@ class MakeControllerCommand extends Command
 
         $className = $this->studlyCase($name);
         $fileName = $className . '.php';
-        $filePath = $this->app->appPath('Http/Controllers/' . $fileName);
+        $filePath = 'app/Http/Controllers/' . $fileName;
 
         // Check if file exists
         if ($this->fileExists($filePath) && !$force) {
