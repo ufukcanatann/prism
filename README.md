@@ -26,34 +26,34 @@ PRISM Framework is a powerful, secure, and developer-friendly PHP framework desi
 
 ##  Quick Start
 
-### Composer ile Kurulum (Önerilen)
+### Installation with Composer (Recommended)
 
 ```bash
-# Yeni proje oluştur
+# Create a new project
 composer create-project ufukcanatann/prism my-project
 
-# Belirli versiyon ile kurulum
+# Installation with a specific version
 composer create-project ufukcanatann/prism my-project "1.0.*"
 
-# Dist paketi tercih et
+# Choose the dist package
 composer create-project ufukcanatann/prism my-project --prefer-dist
 
-# Proje dizinine git
+# Go to the project directory
 cd my-project
 
-# Sunucuyu başlat
+# Start the server
 php prism system:serve
 ```
 
-### Manuel Kurulum
+### Manuel Installation
 
-#### 1. Proje İndir
+#### 1. Download Project
 ```bash
 git clone <repository-url> my-app
 cd my-app
 ```
 
-#### 2. Bağımlılıkları Yükle
+#### 2. Load Dependencies
 ```bash
 composer install
 ```
@@ -63,8 +63,8 @@ composer install
 cp .env.example .env
 ```
 
-#### 4. Environment Konfigürasyonu
-`.env` dosyasını düzenle:
+#### 4. Environment Configuration
+Edit the `.env` file:
 ```env
 APP_NAME="My Application"
 APP_ENV=local
@@ -79,219 +79,17 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-#### 5. Framework Kurulumu
+#### 5. Framework Installation
 ```bash
 php prism system:install
 ```
 
-#### 6. Geliştirme Sunucusunu Başlat
+#### 6. Start Development Server
 ```bash
 php prism system:serve
 ```
 
-`http://127.0.0.1:8000` adresine giderek uygulamanızı görün! 🎉
-
-##  Project Structure
-
-```
-prism-framework/
-├── app/
-│   ├── Http/Controllers/    # Controller classes
-│   |   ├── ApiController.php
-│   |   └── Controller.php
-│   └── Models/              # Model classes
-│       └── Model.php
-|
-├── config/                  # Configuration files
-│   ├── app.php
-│   ├── database.php
-│   ├── rate_limit.php
-│   ├── security.php
-│   ├── mail.php
-│   └── cache.php
-|
-├── core/                    # Framework core classes
-│   ├── Application.php
-│   ├── Config.php
-│   ├── Database.php
-│   ├── Session.php
-│   ├── helpers.php
-│   ├── install.php
-│   ├── Auth/
-│   |   └── Auth.php
-|   |
-│   ├── Console/
-│   |   ├── Commands/
-│   |   |   ├── ClearCacheCommand.php
-│   |   |   ├── Command.php
-│   |   |   ├── DatabaseCommand.php
-│   |   |   ├── GeneratorCommands.php
-│   |   |   ├── MakeControllerCommand.php
-│   |   |   ├── README.md
-│   |   |   ├── ServeCommand.php
-│   |   |   └── SystemCommands.php
-│   |   └── Console.php
-|   |
-│   ├── Container/
-│   |   ├── Exception/
-│   |   |   ├── ContainerException.php
-│   |   |   └── NotFoundException.php
-│   |   | 
-│   |   ├── Interfaces/
-│   |   |   ├── ContainerInterface.php
-│   |   |   └── ServiceProviderInterface.php
-│   |   └── Container.php
-|   |
-│   ├── Contracts/
-|   |
-│   ├── Database/
-│   |   ├── Relations/
-│   |   |   ├── BelongsTo.php
-│   |   |   ├── BelongsToMany.php
-│   |   |   ├── HasMany.php
-│   |   |   ├── HasOne.php
-│   |   |   └── Relation.php
-|   |   |
-│   |   ├── Schema/
-│   |   |   ├── Blueprint.php
-│   |   |   └── Schema.php
-|   |   |
-│   |   ├── Expression.php
-│   |   ├── Factory.php
-│   |   ├── Migration.php
-│   |   ├── Model.php
-│   |   ├── QueryBuilder.php
-│   |   └── Seeder.php
-│   |   
-│   ├── Events/
-│   |   ├── Interfaces/
-│   |   |   ├── EventDispatcherInterface.php
-│   |   |   ├── EventInterface.php
-│   |   |   └── EventSubscriberInterface.php
-│   |   ├── ApplicationTerminated.php
-│   |   ├── EventDispatcher.php
-│   |   ├── RequestReceived.php
-│   |   └── ResponseSent.php
-|   |
-│   ├── Exceptions/
-│   |   ├── Interfaces/
-│   |   |   ├── ExceptionHandlerInterface.php
-│   |   |   ├── RenderableExceptionInterface.php
-│   |   |   └── ReportableExceptionInterface.php
-│   |   └── Handler.php
-|   |
-│   ├── Helpers/
-│   |   ├── AppHelpers.php
-│   |   ├── ArrayHelpers.php
-│   |   ├── CacheHelpers.php
-│   |   ├── DatabaseHelpers.php
-│   |   ├── FactoryHelpers.php
-│   |   ├── FileHelpers.php
-│   |   ├── SecurityHelpers.php
-│   |   ├── StringHelpers.php
-│   |   └── ValidationHelpers.php
-|   |
-│   ├── Http/
-│   |   └── Request.php
-|   |
-│   ├── Interfaces/
-|   |
-│   ├── Middleware/
-│   |   ├── AuthMiddleware.php
-│   |   ├── CorsMiddleware.php
-│   |   ├── CsrfMiddleware.php
-│   |   ├── MiddlewareInterface.php
-│   |   ├── RateLimitMiddleware.php
-│   |   ├── ResponseMiddleware.php
-│   |   ├── SecurityHeadersMiddleware.php
-│   |   └── SessionMiddleware.php
-|   |
-│   ├── Providers/
-│   |   ├── CacheServiceProvider.php
-│   |   ├── ConfigServiceProvider.php
-│   |   ├── DatabaseServiceProvider.php
-│   |   ├── EventServiceProvider.php
-│   |   ├── LogServiceProvider.php
-│   |   ├── RouteServiceProvider.php
-│   |   ├── ServiceProvider.php
-│   |   ├── SessionServiceProvider.php
-│   |   └── ViewServiceProvider.php
-|   |
-│   ├── Routing/
-│   |   ├── Interfaces/
-│   |   |   ├── RouteInterface.php
-│   |   |   └── RouterInterface.php
-│   |   └── AdvancedRouter.php
-|   |
-│   ├── Security/
-│   |   ├── CsrfProtection.php
-│   |   ├── InputValidator.php
-│   |   └── XssProtection.php
-|   |
-│   ├── Services/
-|   |
-│   ├── Support/
-│   |   └── Collection.php
-|   |
-│   ├── Traits/
-|   |
-│   └── View/
-│       ├── Directives/
-│       |   └── BladeDirectives.php
-│       |   
-│       ├── Helpers/
-│       |   └── BladeHelpers.php
-│       |   
-│       ├── Interfaces/
-│       |   ├── ViewInterface.php
-│       |   └── ViewEngineInterface.php
-│       |   
-│       ├── AdvancedView.php
-│       ├── CustomBladeEngine.php
-│       └── SimplePhpEngine.php
-|
-├── database/
-│   ├── migrations/                 # Database migrations  
-│   |   └── 2024_01_01_000001_create_migrations_table.php
-│   ├── seeders/  
-│   |   └── DatabaseSeeder.php      # Database seeders
-│   └── factories/                  # Model factories
-|
-├── public/                         # Web accessible files
-│   ├── css/
-│   ├── images/
-│   ├── js/
-│   ├── uploads/
-│   ├── .htaccess
-│   ├── favicon.png
-│   ├── index.php              # Main entry file
-│   └── router.php
-|
-├── resources/
-│   └── views/               # Blade template files
-│       ├── components/
-│       |   └── alert.blade.php
-│       |   
-│       ├── layouts/
-│       |   └── app.blade.php
-│       |   
-│       └── welcome.blade.php
-|
-├── routes/                  # Route definitions
-│   ├── web.php
-│   └── api.php
-|
-├── storage/                 # Cache, logs and upload files
-├── tests/                   # Test files
-├── vendor/                  # Composer dependencies
-├── .env                     # Environment variables
-├── .env.example
-├── .htaccess
-├── composer.json
-├── composer.lock
-├── prism
-└── README.md
-```
+Go to `http://127.0.0.1:8000` to view your application
 
 ##  Usage Examples
 
