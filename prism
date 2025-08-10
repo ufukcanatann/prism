@@ -1,0 +1,25 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * PRISM Framework Console Application
+ */
+
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Core\Application;
+use Core\Console\Console;
+use Symfony\Component\Console\Input\ArgvInput;
+use Symfony\Component\Console\Output\ConsoleOutput;
+
+// Create application instance
+$app = Application::getInstance();
+
+// Create console application
+$console = new Console($app);
+
+// Run the console application
+$input = new ArgvInput();
+$output = new ConsoleOutput();
+
+exit($console->run($input, $output));

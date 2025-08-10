@@ -1,0 +1,9 @@
+.env
+.cursorignore
+composer.lock
+eksik.md
+env.md
+Temp Project.md
+/storage/
+/vendor/
+
