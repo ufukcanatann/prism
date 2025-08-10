@@ -6,23 +6,29 @@ Bu dosya PRISM Framework'ün mevcut console komutlarını ve kullanımlarını a
 
 ### Sistem Komutları (`SystemCommands`)
 
-#### `system:serve`
+#### `system serve`
 Uygulamayı geliştirme sunucusunda başlatır.
 ```bash
-php prism system:serve
+php prism system serve
 ```
 
-#### `system:clear:cache`
+#### `system clear:cache`
 Uygulama cache'ini temizler.
 ```bash
-php prism system:clear:cache
+php prism system clear:cache
 ```
 
-#### `system:install`
+#### `system install`
 Framework'ü kurar ve veritabanı bağlantısını test eder.
 ```bash
-php prism system:install
+php prism system install
 ```
+
+**Önemli Özellikler:**
+- Veritabanı otomatik olarak oluşturulur
+- Gerekli tablolar otomatik oluşturulur
+- Application key otomatik generate edilir
+- Dizin izinleri otomatik ayarlanır
 
 ### Generator Komutları (`GeneratorCommands`)
 
@@ -55,6 +61,11 @@ Yeni bir factory oluşturur.
 ```bash
 php prism make:factory UserFactory
 ```
+
+**Önemli Özellikler:**
+- Tüm komutlar otomatik dizin oluşturur
+- Path çözümleme sorunları giderildi
+- Symfony Console uyumluluğu sağlandı
 
 #### `make:scaffold`
 **YENİ!** Tek komutla tam bir MVC yapısı oluşturur (Model, Controller, Migration, Seeder, Factory, Views, Routes).
@@ -122,23 +133,49 @@ php prism make:scaffold Product \
 ```
 
 **Post-Scaffold Adımları:**
-1. Migration'ları çalıştır: `php prism db:migrate`
-2. Seeder'ları çalıştır: `php prism db:seed`
-3. Uygulamayı başlat: `php prism system:serve`
+1. Migration'ları çalıştır: `php prism db migrate`
+2. Seeder'ları çalıştır: `php prism db db:seed`
+3. Uygulamayı başlat: `php prism system serve`
+
+**Tam Özellikli Örnek (Test Scaffold):**
+```bash
+php prism make:scaffold Test \
+  --fields="name:string,email:string,age:integer,active:boolean" \
+  --relations="Product:hasMany,User:belongsTo" \
+  --fillable="name,email,age" \
+  --hidden="password" \
+  --casts="age:integer,active:boolean" \
+  --views \
+  --routes
+```
+
+Bu komut şunları oluşturur:
+- Model: `app/Models/Test.php` (fillable, hidden, casts ve relations ile)
+- Migration: `database/migrations/YYYY_MM_DD_HHMMSS_create_tests_table.php` (doğru class name ile)
+- Controller: `app/Http/Controllers/TestController.php` (CRUD metodları ile)
+- Views: `resources/views/tests/` (index, create, edit, show)
+- Routes: `routes/web.php` içine eklenir
+- Factory: `database/factories/TestFactory.php`
+- Seeder: `database/seeders/TestSeeder.php`
 
 ### Veritabanı Komutları (`DatabaseCommands`)
 
-#### `db:migrate`
+#### `db migrate`
 Migration'ları çalıştırır.
 ```bash
-php prism db:migrate
+php prism db migrate
 ```
 
-#### `db:seed`
+#### `db db:seed`
 Seeder'ları çalıştırır.
 ```bash
-php prism db:seed
+php prism db db:seed
 ```
+
+**Önemli Notlar:**
+- Migration class name'leri otomatik olarak `Create{TableName}Table` formatında oluşturulur
+- Veritabanı otomatik olarak `system install` komutu ile oluşturulur
+- Migration'lar PRISM Framework'ün native sınıflarını kullanır
 
 ## Komut Geliştirme
 
@@ -147,6 +184,23 @@ Yeni komut eklemek için:
 1. `core/Console/Commands/` klasöründe yeni komut dosyası oluştur
 2. `Command` sınıfından türet
 3. `core/Console/Console.php` dosyasında komutu kaydet
+
+## Son Güncellemeler
+
+### v3.0.0 - Scaffold Sistemi
+- **Yeni `make:scaffold` komutu** eklendi
+- **Otomatik model özellikleri** (fillable, hidden, casts, relations)
+- **Migration class name düzeltmesi** (Create{TableName}Table formatı)
+- **Veritabanı otomatik oluşturma** (`system install` ile)
+- **Path çözümleme sorunları** giderildi
+- **Symfony Console uyumluluğu** sağlandı
+
+### Düzeltilen Hatalar
+- Migration class name bulunamama hatası
+- Veritabanı otomatik oluşturulamama hatası
+- Path duplication hataları
+- Cache temizleme dosya silme sorunu
+- Controller oluşturma dizin hatası
 
 ## Yardım
 
@@ -158,4 +212,22 @@ php prism list
 Belirli bir komut hakkında yardım almak için:
 ```bash
 php prism help [komut_adı]
+```
+
+## Test Etme
+
+Test scaffold'u oluşturmak için:
+```bash
+php prism make:scaffold Test --fields "name:string,email:string,age:integer,active:boolean" --views --routes --relations "Product:hasMany,User:belongsTo" --fillable "name,email,age" --hidden "password" --casts "age:integer,active:boolean"
+```
+
+Migration ve seeding:
+```bash
+php prism db migrate
+php prism db db:seed
+```
+
+Sunucuyu başlatma:
+```bash
+php prism system serve
 ```

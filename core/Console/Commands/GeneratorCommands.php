@@ -435,7 +435,8 @@ class GeneratorCommands extends Command
         // 2. Create Migration
         $this->section("Creating Migration for: {$name}");
         $tableName = $this->getTableName($name);
-        if ($this->createMigrationForScaffold($name, $tableName, $parsedFields)) {
+        $migrationClassName = 'Create' . ucfirst($tableName) . 'Table';
+        if ($this->createMigrationForScaffold($migrationClassName, $tableName, $parsedFields)) {
             $created[] = "Migration: create_{$tableName}_table";
             $this->success("✓ Migration created successfully");
         } else {
@@ -1073,9 +1074,9 @@ class {$className} extends Migration
         $content .= "{\n";
 
         if ($isResource) {
-            $content .= $this->generateResourceMethods($isApi);
+            $content .= $this->generateResourceMethods($isApi, $name);
         } else {
-            $content .= $this->generateBasicMethods($isApi);
+            $content .= $this->generateBasicMethods($isApi, $name);
         }
 
         $content .= "}\n";
@@ -1086,7 +1087,7 @@ class {$className} extends Migration
     /**
      * Generate basic controller methods
      */
-    protected function generateBasicMethods(bool $isApi): string
+    protected function generateBasicMethods(bool $isApi, string $name = ''): string
     {
         $content = "    /**\n";
         $content .= "     * Display a listing of the resource.\n";
@@ -1100,7 +1101,7 @@ class {$className} extends Migration
             $content .= "            'data' => []\n";
             $content .= "        ]);\n";
         } else {
-            $content .= "        return \$this->view('index', [\n";
+            $content .= "        return \$this->view('" . ($name ? $name . '.' : '') . "index', [\n";
             $content .= "            'title' => 'Index Page'\n";
             $content .= "        ]);\n";
         }
@@ -1144,7 +1145,7 @@ class {$className} extends Migration
     /**
      * Generate resource controller methods
      */
-    protected function generateResourceMethods(bool $isApi): string
+    protected function generateResourceMethods(bool $isApi, string $name = ''): string
     {
         $content = "    /**\n";
         $content .= "     * Display a listing of the resource.\n";
@@ -1160,7 +1161,7 @@ class {$className} extends Migration
             $content .= "        ]);\n";
         } else {
             $content .= "        // \$items = Model::all();\n";
-            $content .= "        return \$this->view('index', [\n";
+            $content .= "        return \$this->view('" . ($name ? $name . '.' : '') . "index', [\n";
             $content .= "            'title' => 'Resources List',\n";
             $content .= "            'items' => []\n";
             $content .= "        ]);\n";
@@ -1179,7 +1180,7 @@ class {$className} extends Migration
             $content .= "            'message' => 'Create form'\n";
             $content .= "        ]);\n";
         } else {
-            $content .= "        return \$this->view('create', [\n";
+            $content .= "        return \$this->view('" . ($name ? $name . '.' : '') . "create', [\n";
             $content .= "            'title' => 'Create New Resource'\n";
             $content .= "        ]);\n";
         }
@@ -1227,7 +1228,7 @@ class {$className} extends Migration
             $content .= "        ]);\n";
         } else {
             $content .= "        // \$item = Model::findOrFail(\$id);\n";
-            $content .= "        return \$this->view('show', [\n";
+            $content .= "        return \$this->view('" . ($name ? $name . '.' : '') . "show', [\n";
             $content .= "            'title' => 'Resource Details',\n";
             $content .= "            'item' => ['id' => \$id]\n";
             $content .= "        ]);\n";
@@ -1249,7 +1250,7 @@ class {$className} extends Migration
             $content .= "        ]);\n";
         } else {
             $content .= "        // \$item = Model::findOrFail(\$id);\n";
-            $content .= "        return \$this->view('edit', [\n";
+            $content .= "        return \$this->view('" . ($name ? $name . '.' : '') . "edit', [\n";
             $content .= "            'title' => 'Edit Resource',\n";
             $content .= "            'item' => ['id' => \$id]\n";
             $content .= "        ]);\n";
