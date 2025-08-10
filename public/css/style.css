@@ -356,7 +356,8 @@ button,
    =================================== */
 .hero-gradient,
 .page-gradient,
-.docs-gradient {
+.docs-gradient,
+.docs-section {
     background: var(--gradient-primary);
     min-height: 100vh;
     position: relative;
@@ -366,7 +367,8 @@ button,
 
 .hero-gradient::before,
 .page-gradient::before,
-.docs-gradient::before {
+.docs-gradient::before,
+.docs-section::before {
     content: '';
     position: absolute;
     top: 0;
@@ -1177,6 +1179,8 @@ body.dark-theme,
 .section-header {
     text-align: center;
     margin-bottom: var(--spacing-3xl);
+    position: relative;
+    z-index: 2;
 }
 
 .section-header h2 {
@@ -1194,7 +1198,6 @@ body.dark-theme,
 /* Documentation Section */
 .docs-section {
     padding: var(--spacing-4xl) 0;
-    background: var(--bg-secondary);
 }
 
 .docs-preview {
@@ -1207,6 +1210,8 @@ body.dark-theme,
     overflow: hidden;
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);
+    position: relative;
+    z-index: 2;
 }
 
 .docs-nav {

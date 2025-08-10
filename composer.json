@@ -1,9 +1,7 @@
 {
-    "name": "ufukcanatann/prism",
+    "name": "prism/prism",
     "description": "PRISM - Modern PHP Framework for Enterprise Applications",
     "type": "project",
-    "version": "1.0.0",
-    "minimum-stability": "dev",
     "prefer-stable": true,
     "keywords": [
         "framework",
@@ -104,10 +102,9 @@
             "php-http/discovery": true
         }
     },
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/ufukcanatann/prism"
+    "extra": {
+        "branch-alias": {
+            "dev-main": "1.0.x-dev"
         }
-    ]
+    }
 }
