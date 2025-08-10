@@ -418,7 +418,7 @@ MAIL_MAILER=smtp
 - **XSS Protection**: Output escaping
 - **Audit Logging**: Comprehensive user activity tracking
 
-## 📊 Database Schema
+## Database Schema
 
 The system includes the following core tables:
 
@@ -505,7 +505,7 @@ php prism system route:list
 php prism system inspect database
 ```
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run tests
