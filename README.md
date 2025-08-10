@@ -4,27 +4,27 @@
 
 PRISM Framework is a powerful, secure, and developer-friendly PHP framework designed for building modern web applications and APIs. Built with enterprise-grade features and best practices in mind.
 
-## 🚀 Key Features
+## Key Features
 
-- **🏗️ MVC Architecture**: Clean, organized Model-View-Controller structure
-- **🎨 Blade Template Engine**: Powerful and intuitive templating system
-- **🛡️ Built-in Security**: CSRF protection, XSS prevention, input validation
-- **🚀 High Performance**: Optimized routing, caching, and database operations
-- **📦 Dependency Injection**: Modern service container and dependency injection
-- **🔧 Powerful CLI Tools**: Code generators and management commands
-- **🗃️ Database Features**: Migrations, seeders, factories, and query builder
-- **🌐 RESTful APIs**: Built-in API support with JSON responses
-- **🔒 Middleware System**: Flexible request/response processing
-- **📊 Modern UI**: Bootstrap 5 integration for responsive design
+- ** MVC Architecture**: Clean, organized Model-View-Controller structure
+- ** Blade Template Engine**: Powerful and intuitive templating system
+- ** Built-in Security**: CSRF protection, XSS prevention, input validation
+- ** High Performance**: Optimized routing, caching, and database operations
+- ** Dependency Injection**: Modern service container and dependency injection
+- ** Powerful CLI Tools**: Code generators and management commands
+- ** Database Features**: Migrations, seeders, factories, and query builder
+- ** RESTful APIs**: Built-in API support with JSON responses
+- ** Middleware System**: Flexible request/response processing
+- ** Modern UI**: Bootstrap 5 integration for responsive design
 
-## 📋 Requirements
+##  Requirements
 
 - PHP 8.0 or higher
 - MySQL 5.7+ / PostgreSQL 10+ / SQLite 3
 - Composer
 - Web server (Apache/Nginx)
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### 1. Create New Project
 ```bash
@@ -70,7 +70,7 @@ php prism system serve
 
 Visit `http://localhost:8000` to see your application running! 🎉
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 prism-framework/
@@ -272,7 +272,7 @@ prism-framework/
 └── README.md
 ```
 
-## 🎯 Usage Examples
+##  Usage Examples
 
 ### Generate Your First Components
 ```bash
@@ -350,7 +350,7 @@ class UserController extends Controller
 @endsection
 ```
 
-## 🔧 Configuration
+##  Configuration
 
 ### Environment Variables
 Configure the following settings in `.env` file:
@@ -388,7 +388,7 @@ MAIL_MAILER=smtp
 ]
 ```
 
-## 🛡️ Security
+##  Security
 
 - **CSRF Protection**: CSRF token validation for all forms
 - **Encryption**: Secure password hashing with bcrypt
@@ -406,7 +406,7 @@ The system includes the following core tables:
 - `password_resets` - Password reset tokens
 - `failed_jobs` - Failed job queue
 
-## 🚀 API Usage
+##  API Usage
 
 ### RESTful Endpoints
 ```php
@@ -418,14 +418,14 @@ PUT    /api/users/{id}         # Update user
 DELETE /api/users/{id}         # Delete user
 ```
 
-## 🎨 Frontend
+##  Frontend
 
 - **Bootstrap 5**: Modern and responsive design
 - **Font Awesome**: Icon library
 - **Chart.js**: Charts and statistics
 - **jQuery**: JavaScript library
 
-## 🔧 CLI Commands
+##  CLI Commands
 
 PRISM Framework comes with powerful CLI tools to speed up development:
 
@@ -494,7 +494,7 @@ composer test
 composer test-coverage
 ```
 
-## 🤝 Contributing
+##  Contributing
 
 1. Fork the project
 2. Create feature branch (`git checkout -b feature/amazing-feature`)
@@ -502,17 +502,17 @@ composer test-coverage
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Create Pull Request
 
-## 📄 License
+##  License
 
 This project is licensed under the MIT License.
 
-## 📞 Support
+##  Support
 
 For any issues or suggestions:
 - Open an issue
 - Email: support@prism-framework.com
 
-## 🔄 Updates
+##  Updates
 
 ### v3.0.0
 - Initial release
