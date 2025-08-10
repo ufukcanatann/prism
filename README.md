@@ -26,7 +26,7 @@ PRISM Framework is a powerful, secure, and developer-friendly PHP framework desi
 
 ##  Quick Start
 
-### 🚀 Composer ile Kurulum (Önerilen)
+### Composer ile Kurulum (Önerilen)
 
 ```bash
 # Yeni proje oluştur
@@ -45,7 +45,7 @@ cd my-project
 php prism system:serve
 ```
 
-### 📋 Manuel Kurulum
+### Manuel Kurulum
 
 #### 1. Proje İndir
 ```bash
